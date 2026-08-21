@@ -1,0 +1,45 @@
+{
+  "name": "@inovando/obsidian-rag-tools",
+  "version": "1.0.0",
+  "description": "CLI tools and MCP Server to validate, optimize, and serve RAG-focused Obsidian vaults.",
+  "main": "validate_vault.js",
+  "preferGlobal": true,
+  "bin": {
+    "obsidian-rag-mcp": "./bin/mcp.js",
+    "obsidian-rag-mcp-tcp": "./bin/mcp-tcp.js",
+    "obsidian-rag-validate": "./bin/validate.js",
+    "obsidian-rag-fix-density": "./bin/fix-density.js",
+    "obsidian-rag-init": "./bin/init.js",
+    "obsidian-rag-setup": "./bin/setup.js"
+  },
+  "files": [
+    "lib",
+    "bin",
+    "templates",
+    ".obsidian",
+    "mcp-server.js",
+    "mcp-server-host.js",
+    "validate_vault.js",
+    "fix_token_density.js",
+    "fix_yaml_duplicates.js",
+    "fix_yaml_orphan_fields.js",
+    "README.md",
+    "PROJECT.md"
+  ],
+  "scripts": {
+    "validate": "node validate_vault.js",
+    "mcp": "node mcp-server-host.js"
+  },
+  "keywords": [
+    "obsidian",
+    "mcp",
+    "rag",
+    "llm",
+    "validator"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "js-yaml": "^4.2.0"
+  }
+}

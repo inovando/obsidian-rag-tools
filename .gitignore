@@ -1,0 +1,31 @@
+# Obsidian internal files
+.obsidian/workspace
+.obsidian/workspace.json
+.obsidian/graph.json
+.obsidian/cache/
+.obsidian/plugins/*/node_modules/
+.obsidian/plugins/*/dist/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# System/IDE files
+.vscode/
+.idea/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# E2E Test Vaults
+.temp_vaults/
+
+# NPM pack output
+*.tgz
+
+# Ignore personal knowledge base references and agent files (keep repo code-only)
+references/
+.agents/
+TagsRoutes/

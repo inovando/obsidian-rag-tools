@@ -1,0 +1,1 @@
+{"name":"delete_note","description":"Remove/deleta uma nota (arquivo) no vault RAG pelo seu caminho relativo.","parameters":{"properties":{"filePath":{"description":"Caminho relativo da nota a ser removida (ex: nodejs/event-loop.md).","type":"string"}},"required":["filePath"],"type":"object"}}
