@@ -1,5 +1,5 @@
 {
-  "name": "@inovando/obsidian-rag-tools",
+  "name": "@inovan.do/obsidian-rag-tools",
   "version": "1.0.0",
   "description": "CLI tools and MCP Server to validate, optimize, and serve RAG-focused Obsidian vaults.",
   "main": "validate_vault.js",
