@@ -18,7 +18,7 @@ const referencesDir = path.join(targetDir, 'references');
 
 if (!fs.existsSync(templatesDir) && !fs.existsSync(referencesDir)) {
   console.warn(`⚠️ O diretório atual não parece conter a estrutura de um Obsidian Vault (templates/ ou references/).`);
-  console.log(`Dica: Rode 'npx @inovando/obsidian-rag-tools obsidian-rag-init' primeiro para inicializar.\n`);
+  console.log(`Dica: Rode 'npx @inovan.do/obsidian-rag-tools obsidian-rag-init' primeiro para inicializar.\n`);
 }
 
 // 2. Determinar comandos e argumentos baseados no modo de execução (Dev vs Prod)
@@ -26,7 +26,7 @@ const isDev = !__dirname.includes('node_modules');
 const absoluteMcpPath = path.resolve(__dirname, 'mcp.js');
 
 let mcpCommand = 'npx';
-let mcpArgs = ['-y', '@inovando/obsidian-rag-tools', 'obsidian-rag-mcp'];
+let mcpArgs = ['-y', '@inovan.do/obsidian-rag-tools', 'obsidian-rag-mcp'];
 
 if (isDev) {
   mcpCommand = 'node';

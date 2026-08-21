@@ -56,7 +56,7 @@ You can automatically configure the Obsidian RAG MCP server and load the LLM ins
 Run the setup CLI from the root of your vault:
 ```bash
 # Using the globally/locally published npm package:
-npx @inovando/obsidian-rag-tools obsidian-rag-setup [path-to-vault]
+npx @inovan.do/obsidian-rag-tools obsidian-rag-setup [path-to-vault]
 
 # Or when developing locally:
 node bin/setup.js [path-to-vault]

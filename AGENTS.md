@@ -77,7 +77,7 @@ Ao ativar um skill, o modelo DEVE:
 
 ## Setup Automático em Clientes LLM
 Você pode rodar o setup automático para injetar estas regras de IA (como `.cursorrules` e `.github/copilot-instructions.md`) e configurar os servidores MCP no seu ambiente rodando:
-`npx @inovando/obsidian-rag-tools obsidian-rag-setup` (ou `node bin/setup.js` localmente).
+`npx @inovan.do/obsidian-rag-tools obsidian-rag-setup` (ou `node bin/setup.js` localmente).
 Isso configurará automaticamente Claude Desktop, Cursor, OpenCode/VSCode, Copilot/Codex e Antigravity.
 
 ## MCP Tools Disponíveis
