@@ -224,6 +224,35 @@ function setupVsCodeMcp(vaultRoot, command, args) {
   }
 }
 
+// --- CONFIGURAÇÃO CLAUDE CODE (~/.claude.json) ---
+function setupClaudeCodeMcp(vaultRoot, command, args) {
+  const home = os.homedir();
+  const claudeJsonPath = path.join(home, '.claude.json');
+
+  if (fs.existsSync(claudeJsonPath)) {
+    try {
+      const content = fs.readFileSync(claudeJsonPath, 'utf8');
+      const config = JSON.parse(content) || {};
+      if (!config.mcpServers) config.mcpServers = {};
+
+      config.mcpServers['obsidian-rag'] = {
+        command: command,
+        args: args,
+        env: {
+          OBSIDIAN_VAULT_PATH: vaultRoot
+        },
+        type: 'stdio'
+      };
+
+      fs.copyFileSync(claudeJsonPath, claudeJsonPath + '.bak');
+      fs.writeFileSync(claudeJsonPath, JSON.stringify(config, null, 2), 'utf8');
+      console.log(`✅ MCP configurado no Claude Code (~/.claude.json)!`);
+    } catch (err) {
+      console.warn(`❌ Falha ao configurar Claude Code: ${err.message}`);
+    }
+  }
+}
+
 // --- CONFIGURAÇÃO ANTIGRAVITY (2.0 / IDE) ---
 function setupAntigravityMcp() {
   const home = os.homedir();
@@ -283,6 +312,9 @@ setupVsCodeMcp(targetDir, mcpCommand, mcpArgs);
 
 console.log(`\nConfigurando Antigravity 2.0 / Antigravity IDE...`);
 setupAntigravityMcp();
+
+console.log(`\nConfigurando Claude Code...`);
+setupClaudeCodeMcp(targetDir, mcpCommand, mcpArgs);
 
 console.log(`\n======================================================`);
 console.log(`Configuração Concluída com Sucesso!`);
