@@ -8,6 +8,7 @@ const { handleReindexVault } = require('./lib/tools/reindex');
 const { handleGetPendingReviews } = require('./lib/tools/pending');
 const { handleListSkills, handleReadSkill } = require('./lib/tools/skills');
 const { handleManageAgentProfile } = require('./lib/tools/agents');
+const { handleManageGuidelines } = require('./lib/tools/guidelines');
 const { handleManageSessionMemory } = require('./lib/tools/memory');
 const { handleGetMcpMetrics } = require('./lib/tools/metrics');
 const { recordError } = require('./lib/metrics');
@@ -53,6 +54,13 @@ function formatToolResult(name, result) {
       textContent = `**Arquivo:** ${result.filePath}${filterMsg}\n**Linhas do Vault:** ${result.lineCount} | **Caracteres:** ${result.characterCount}\n\n${fmYaml}${result.content || ''}`;
     } else if (name === 'write_note') {
       textContent = `✅ Nota escrita com sucesso!\n- **Arquivo:** ${result.filePath}\n- **Total de Linhas:** ${result.lineCount}`;
+    } else if (name === 'manage_guidelines') {
+      if (result.guidelines) {
+        textContent = `📐 **Diretrizes de Código e Projeto Registradas (${result.guidelines.length}):**\n\n`;
+        textContent += result.guidelines.map(g => `- **[${g.type.toUpperCase()}]** \`${g.name}\` (${g.path})`).join('\n');
+      } else {
+        textContent = result.message || `📐 **Diretriz ${result.name} (${result.type}):**\n\n${result.content}`;
+      }
     } else if (name === 'get_pending_reviews') {
       if (result.totalPending === 0) {
         textContent = `✅ Nenhuma nota pendente de revisão humana! Todas as notas estão aprovadas (verified_by_reviewer: true).`;
@@ -70,9 +78,9 @@ function formatToolResult(name, result) {
     } else if (name === 'read_skill') {
       textContent = `📖 **Skill: ${result.skillId}** (${result.path})\n\n${result.content}`;
     } else if (name === 'manage_agent_profile') {
-      if (argsAction(name, result) === 'list') {
-        textContent = `👥 **Time de Agentes Especializados no Vault (${(result.profiles || []).length}):**\n\n`;
-        textContent += (result.profiles || []).map(p => `- **ID:** \`${p.agentId}\` | Papel: ${p.role}`).join('\n');
+      if (result.profiles) {
+        textContent = `👥 **Time de Agentes Especializados no Vault (${result.profiles.length}):**\n\n`;
+        textContent += result.profiles.map(p => `- **ID:** \`${p.agentId}\` | Papel: ${p.role}`).join('\n');
       } else {
         textContent = result.message || `**Agente ${result.agentId}:**\n\n${result.content}`;
       }
@@ -106,10 +114,6 @@ function formatToolResult(name, result) {
     content: [{ type: 'text', text: textContent }],
     isError
   };
-}
-
-function argsAction(name, result) {
-  return result && result.profiles ? 'list' : 'read';
 }
 
 async function handleMessage(message) {
@@ -149,6 +153,8 @@ async function handleMessage(message) {
         result = handleMoveNote(args || {});
       } else if (name === 'delete_note') {
         result = handleDeleteNote(args || {});
+      } else if (name === 'manage_guidelines') {
+        result = handleManageGuidelines(args || {});
       } else if (name === 'get_pending_reviews') {
         result = handleGetPendingReviews(args || {});
       } else if (name === 'list_skills') {
@@ -208,4 +214,4 @@ process.stdin.on('data', (chunk) => {
   }
 });
 
-console.error("Obsidian RAG MCP Server v1.2.0 (Skills, Agents & Memory Support) iniciado. Ready.");
+console.error("Obsidian RAG MCP Server v1.2.0 (Guidelines, Skills & Agents Support) iniciado. Ready.");

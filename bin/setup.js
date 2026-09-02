@@ -114,6 +114,37 @@ function setupCursorRules(vaultRoot) {
   }
 }
 
+// --- CONFIGURAÇÃO DIRETRIZES DO PROJETO E LINGUAGEM (.agents/guidelines/) ---
+function setupGuidelinesStructure(vaultRoot) {
+  const guidelinesDir = path.join(vaultRoot, '.agents', 'guidelines');
+  const langDir = path.join(guidelinesDir, 'languages');
+  const projDir = path.join(guidelinesDir, 'projects');
+
+  try {
+    if (!fs.existsSync(langDir)) fs.mkdirSync(langDir, { recursive: true });
+    if (!fs.existsSync(projDir)) fs.mkdirSync(projDir, { recursive: true });
+
+    const localGuidelines = path.resolve(__dirname, '..', '.agents', 'guidelines');
+    if (fs.existsSync(localGuidelines)) {
+      // Copia arquivos padrão se não existirem
+      const codeStyleSrc = path.join(localGuidelines, 'code-style.md');
+      const codeStyleDest = path.join(guidelinesDir, 'code-style.md');
+      if (fs.existsSync(codeStyleSrc) && !fs.existsSync(codeStyleDest)) {
+        fs.copyFileSync(codeStyleSrc, codeStyleDest);
+      }
+
+      const tsSrc = path.join(localGuidelines, 'languages', 'typescript.md');
+      const tsDest = path.join(langDir, 'typescript.md');
+      if (fs.existsSync(tsSrc) && !fs.existsSync(tsDest)) {
+        fs.copyFileSync(tsSrc, tsDest);
+      }
+    }
+    console.log(`✅ Diretrizes de Linguagens e Projetos (.agents/guidelines/) inicializadas!`);
+  } catch (err) {
+    console.warn(`❌ Falha ao inicializar diretrizes: ${err.message}`);
+  }
+}
+
 // --- CONFIGURAÇÃO CODEX / COPILOT INSTRUCTIONS ---
 function setupCopilotInstructions(vaultRoot) {
   const githubDir = path.join(vaultRoot, '.github');
@@ -156,7 +187,6 @@ function setupVsCodeMcp(vaultRoot, command, args) {
       const config = JSON.parse(content);
       if (!config.mcpServers) config.mcpServers = [];
 
-      // Atualiza ou insere o mcpServer
       config.mcpServers = config.mcpServers.filter(s => s.name !== 'obsidian-rag');
       config.mcpServers.push({
         name: 'obsidian-rag',
@@ -303,6 +333,9 @@ setupClaudeDesktop(targetDir, mcpCommand, mcpArgs);
 console.log(`\nConfigurando regras do Cursor (.cursorrules)...`);
 setupCursorRules(targetDir);
 
+console.log(`\nConfigurando diretrizes de linguagem (.agents/guidelines/)...`);
+setupGuidelinesStructure(targetDir);
+
 console.log(`\nConfigurando regras do GitHub Copilot/Codex (.github/copilot-instructions.md)...`);
 setupCopilotInstructions(targetDir);
 
@@ -318,12 +351,3 @@ setupClaudeCodeMcp(targetDir, mcpCommand, mcpArgs);
 console.log(`\n======================================================`);
 console.log(`Configuração Concluída com Sucesso!`);
 console.log(`======================================================`);
-console.log(`\nInstruções Manuais / Validação:`);
-console.log(`1. Se estiver usando o Cursor:`);
-console.log(`   - Adicione manualmente no menu Features -> MCP clicando em '+ Add New MCP Server'`);
-console.log(`   - Name: obsidian-rag`);
-console.log(`   - Type: command`);
-console.log(`   - Command: ${mcpCommand} ${mcpArgs.join(' ')}`);
-console.log(`   - Env (Variavel de Ambiente): OBSIDIAN_VAULT_PATH = ${targetDir}`);
-console.log(`2. Reinicie seu cliente LLM (Claude Desktop, VS Code, Cursor) para aplicar as alterações.`);
-console.log(`======================================================\n`);
