@@ -4,6 +4,7 @@
 .obsidian/graph.json
 .obsidian/cache/
 .obsidian/rag-index.json
+.obsidian/session_memory.json
 .obsidian/.obsidian/
 .obsidian/plugins/*/node_modules/
 .obsidian/plugins/*/dist/

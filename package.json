@@ -1,7 +1,7 @@
 {
   "name": "@inovan.do/obsidian-rag-tools",
-  "version": "1.1.1",
-  "description": "CLI tools and MCP Server to validate, optimize, index vectors, and serve RAG-focused Obsidian vaults.",
+  "version": "1.2.0",
+  "description": "CLI tools and MCP Server to validate, optimize, index vectors, import repos, and serve RAG-focused Obsidian vaults.",
   "main": "validate_vault.js",
   "preferGlobal": true,
   "bin": {
@@ -11,7 +11,9 @@
     "obsidian-rag-fix-density": "./bin/fix-density.js",
     "obsidian-rag-init": "./bin/init.js",
     "obsidian-rag-setup": "./bin/setup.js",
-    "obsidian-rag-index": "./bin/index.js"
+    "obsidian-rag-index": "./bin/index.js",
+    "obsidian-rag-import": "./bin/import.js",
+    "obsidian-rag-query": "./bin/query.js"
   },
   "files": [
     "lib",
@@ -29,6 +31,8 @@
   "scripts": {
     "validate": "node validate_vault.js",
     "index": "node bin/index.js",
+    "import": "node bin/import.js",
+    "query": "node bin/query.js",
     "mcp": "node mcp-server-host.js"
   },
   "keywords": [
@@ -38,7 +42,9 @@
     "vector",
     "embeddings",
     "llm",
-    "validator"
+    "validator",
+    "skills",
+    "agents"
   ],
   "author": "",
   "license": "ISC",
