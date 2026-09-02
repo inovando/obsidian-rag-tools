@@ -26,7 +26,7 @@ const isDev = !__dirname.includes('node_modules');
 const absoluteMcpPath = path.resolve(__dirname, 'mcp.js');
 
 let mcpCommand = 'npx';
-let mcpArgs = ['-y', '@inovan.do/obsidian-rag-tools', 'obsidian-rag-mcp'];
+let mcpArgs = ['-y', '--package=@inovan.do/obsidian-rag-tools', 'obsidian-rag-mcp'];
 
 if (isDev) {
   mcpCommand = 'node';
@@ -270,7 +270,6 @@ function setupAntigravityMcp() {
       tools = schemas.tools;
     } catch (e) {
       console.warn("⚠️ Não foi possível importar lib/schemas.js diretamente. Tentando carregar de forma alternativa.");
-      // Fallback básico se a importação falhar por caminhos relativos
       const schemasPath = path.resolve(__dirname, '..', 'lib', 'schemas.js');
       if (fs.existsSync(schemasPath)) {
         tools = require(schemasPath).tools;

@@ -4,6 +4,7 @@ const { handleWriteNote } = require('./lib/tools/write');
 const { handleMoveNote } = require('./lib/tools/move');
 const { handleDeleteNote } = require('./lib/tools/delete');
 const { handleValidateVault } = require('./lib/tools/validate');
+const { handleReindexVault } = require('./lib/tools/reindex');
 const { handleGetMcpMetrics } = require('./lib/tools/metrics');
 const { recordError } = require('./lib/metrics');
 const yaml = require('js-yaml');
@@ -41,7 +42,7 @@ function formatToolResult(name, result) {
         textContent = result.results.map(r => {
           const tagsStr = (r.frontmatter && Array.isArray(r.frontmatter.tags)) ? r.frontmatter.tags.join(', ') : 'Nenhuma';
           const topicStr = (r.frontmatter && r.frontmatter.topic) || 'Nenhum';
-          return `### Nota: ${r.filePath} (Score: ${r.score})\n- **Tópico:** ${topicStr}\n- **Tags:** ${tagsStr}\n\n**Trecho:**\n${r.excerpt}\n\n---`;
+          return `### Nota: ${r.filePath} (Score RRF: ${r.score})\n- **Tópico:** ${topicStr}\n- **Tags:** ${tagsStr}\n- **Semantic Score:** ${r.semanticScore} | **Keyword Score:** ${r.keywordScore}\n\n**Trecho:**\n${r.excerpt}\n\n---`;
         }).join('\n\n');
       }
     } else if (name === 'read_note') {
@@ -55,6 +56,8 @@ function formatToolResult(name, result) {
       textContent = `✅ Nota movida com sucesso!\n- **Origem:** ${result.oldFilePath}\n- **Destino:** ${result.newFilePath}`;
     } else if (name === 'delete_note') {
       textContent = `✅ Nota deletada com sucesso!\n- **Arquivo:** ${result.filePath}`;
+    } else if (name === 'reindex_vault') {
+      textContent = `✅ Vault reindexado com sucesso!\n- **Arquivos processados:** ${result.totalFiles}\n- **Chunks vetoriais gerados:** ${result.totalChunks}`;
     } else if (name === 'validate_vault') {
       isError = !result.success; // se falhar na validação do vault, marcamos como erro no MCP
       const statusEmoji = result.success ? '✅ PASSED' : '❌ FAILED';
@@ -105,7 +108,7 @@ async function handleMessage(message) {
       },
       serverInfo: {
         name: "obsidian-rag-mcp-server",
-        version: "1.1.0"
+        version: "1.2.0"
       }
     });
     return;
@@ -128,15 +131,17 @@ async function handleMessage(message) {
 
     try {
       if (name === 'query_knowledge_base') {
-        result = handleQueryKnowledgeBase(args || {});
+        result = await handleQueryKnowledgeBase(args || {});
       } else if (name === 'read_note') {
         result = handleReadNote(args || {});
       } else if (name === 'write_note') {
-        result = handleWriteNote(args || {});
+        result = await handleWriteNote(args || {});
       } else if (name === 'move_note') {
         result = handleMoveNote(args || {});
       } else if (name === 'delete_note') {
         result = handleDeleteNote(args || {});
+      } else if (name === 'reindex_vault') {
+        result = await handleReindexVault(args || {});
       } else if (name === 'validate_vault') {
         result = await handleValidateVault(args || {});
       } else if (name === 'get_mcp_metrics') {
@@ -198,4 +203,4 @@ process.stdin.on('data', (chunk) => {
   }
 });
 
-console.error("Obsidian RAG MCP Server v1.1.0 iniciado (STDIO JSON-RPC 2.0). Ready.");
+console.error("Obsidian RAG MCP Server v1.2.0 (Vector RAG Support) iniciado. Ready.");

@@ -1,101 +1,121 @@
-# RAG-Optimized Obsidian Vault Reference Base
+# @inovan.do/obsidian-rag-tools
 
-Welcome to the RAG-Optimized Obsidian Vault Reference Base. This vault is structured to serve as a high-density, token-optimized knowledge base for LLMs and local RAG (Retrieval-Augmented Generation) pipelines, containing precise modular reference notes for modern web technologies.
-
----
-
-## 📂 Vault Mapping & Directory Structure
-
-The repository is organized into distinct subdirectories designed to separate templates, references, configurations, and scripts:
-
-- **`/templates`**: Standardized Markdown layouts and YAML schema definitions for creating consistent, machine-readable notes.
-- **`/references`**: Tech stack-specific directories containing modular reference notes:
-  - `/references/nodejs`: Node.js event loop, core APIs, and asynchronous patterns.
-  - `/references/react`: React hooks, Server/Client components, and concurrent rendering.
-  - `/references/nextjs`: Next.js App Router, rendering strategies, and data fetching/caching.
-  - `/references/adonisjs4`: Legacy AdonisJS 4 (Lucid ORM, routing, middleware).
-  - `/references/adonisjs7`: Modern TypeScript-first AdonisJS 6/7 (IoC/DI, modern Lucid ORM, validations).
-- **`/configs`**: Configuration templates for integration:
-  - `obsidian-mcp-config.json`: Guide to connect the Obsidian Local REST API to external LLM clients.
-  - `context7-config.json`: Setup guide for context7 local MCP server to retrieve official doc mappings.
-- **`PROJECT.md`**: Project blueprint, interface contracts, and layout definition.
-- **`validate_vault.js`**: An automated Node.js validation script located at the project root to enforce frontmatter schema and link integrity.
+Ferramentas CLI e Servidor MCP otimizados para criar, validar, indexar e servir bases de conhecimento RAG (Retrieval-Augmented Generation) no Obsidian para IAs (Claude, Cursor, Antigravity, VS Code).
 
 ---
 
-## 🏷️ Tagging Rules
+## ⚡ Recursos Principais
 
-To ensure reliable querying and metadata filtering, all notes in this vault must adhere to the following tagging rules in their YAML frontmatter:
-
-1. **Stack Hierarchy**: Use lowercase hierarchical tags where applicable (e.g., `nodejs`, `react`, `nextjs`, `adonisjs/v4`, `adonisjs/v6`).
-2. **Feature Specificity**: Add tags indicating the specific topic (e.g., `event-loop`, `hooks`, `routing`, `orm`, `middleware`).
-3. **Status Tags**:
-   - `status/draft`: Note is being written.
-   - `status/reviewed`: Note has been signed off by the reviewer (`verified_by_reviewer: true`).
-4. **Consistency**: Do not mix casing (use kebab-case for multi-word tags, e.g., `async-patterns`).
-
----
-
-## 🚀 RAG Optimization Strategy
-
-This vault is explicitly designed to maximize RAG performance and minimize token usage:
-
-- **Token-Dense Modular Design**: Notes are kept short and modular (typically under 200 lines). This ensures that when a section or note is retrieved as a chunk, it is self-contained and highly relevant, preventing context pollution.
-- **YAML Frontmatter Metadata**: Standardized schemas allow search agents to instantly filter notes by `topic`, `tags`, and review status before performing full-text or vector searches.
-- **Clear Markdown Headings**: Standardized headers (`## Core Architecture`, `## Technical Implementation`, `## Common Gotchas`) establish a consistent structure that helps chunking algorithms divide files intelligently.
-- **Copy-Pasteable Code Blocks**: Code snippets are concise, complete, and syntactically correct, ensuring an LLM can immediately extract functional examples without hallucination.
+- **🧠 Banco Vetorial & Busca Semântica Local (Local RAG)**:
+  - Embeddings executados **100% offline** via `@xenova/transformers` (modelo ONNX `all-MiniLM-L6-v2` via WebAssembly, sem compilação C++ nativa).
+  - Suporte flexível e opcional a **Ollama** (`EMBEDDING_PROVIDER=ollama`) e **OpenAI**.
+  - **Busca Híbrida RRF (Reciprocal Rank Fusion)**: Combina busca por palavras-chave/tags (BM25) com similaridade vetorial por significado (Cosseno em `Float32Array`).
+- **📝 Salvamento Inteligente de Notas (`write_note`)**:
+  - Recálculo preciso de `token_density` (`line_count` e `character_count`) no YAML Frontmatter.
+  - Validação de limite de 200 linhas por nota modular.
+  - Atualização incremental automática dos vetores da nota alterada no banco vetorial `.obsidian/rag-index.json`.
+- **🛠️ Setup Automático em Clientes LLM**:
+  - Injeta regras de IA (`AGENTS.md`, `.cursorrules`, `.github/copilot-instructions.md`) e configura o Servidor MCP automaticamente no Claude Desktop, Claude Code, Cursor, Antigravity e VS Code (Continue / Cline / Roo Code).
+- **✅ Validador deVault Automatizado**:
+  - Garante integridade da estrutura, frontmatter YAML, links wiki `[[note]]`, links markdown e limites de linha.
 
 ---
 
-## 🛠️ Auto-Configuration & Setup CLI (MCP & LLM Rules)
+## 🚀 Guia de Instalação e Uso Rápido
 
-You can automatically configure the Obsidian RAG MCP server and load the LLM instructions/rules (`AGENTS.md`) into your environment by running the setup command.
+### 1. Setup Automático de IA e MCP
+Para configurar os servidores MCP e arquivos de regras no seu ambiente:
 
-### Running Setup
-
-Run the setup CLI from the root of your vault:
 ```bash
-# Using the globally/locally published npm package:
-npx @inovan.do/obsidian-rag-tools obsidian-rag-setup [path-to-vault]
-
-# Or when developing locally:
-node bin/setup.js [path-to-vault]
+# Executar setup na raiz do seu Obsidian Vault:
+npx -y @inovan.do/obsidian-rag-tools obsidian-rag-setup
 ```
 
-### What the Setup CLI Configures:
-1. **Claude Desktop**: Auto-detects and adds the MCP server to `claude_desktop_config.json`.
-2. **Cursor**: Creates a `.cursorrules` file in the root of the vault so the AI assistant automatically follows the rules in `AGENTS.md`. Also provides copy-paste steps for the Features Settings UI.
-3. **VS Code / OpenCode**: Auto-configures the **Continue** extension (`~/.continue/config.json`) and **Cline/Roo Code** settings.
-4. **GitHub Copilot / Codex**: Generates `.github/copilot-instructions.md` with system guidelines.
-5. **Antigravity / Antigravity IDE**: Registers the MCP server schemas and instructions under the local Antigravity directory (`~/.gemini/antigravity/mcp/obsidian-rag/`).
+### 2. Indexação Vetorial (Gerar Banco Vetorial RAG)
+Para indexar todas as notas de referência do seu vault e gerar o banco semântico (`.obsidian/rag-index.json`):
+
+```bash
+npx -y --package=@inovan.do/obsidian-rag-tools obsidian-rag-index
+```
+
+### 3. Validação da Estrutura do Vault
+Para validar a integridade de todas as notas do vault:
+
+```bash
+npx -y --package=@inovan.do/obsidian-rag-tools obsidian-rag-validate
+```
+
+### 4. Recálculo Automático de Token Density
+Se modificar notas manualmente e precisar recalcular `line_count` e `character_count`:
+
+```bash
+npx -y --package=@inovan.do/obsidian-rag-tools obsidian-rag-fix-density
+```
 
 ---
 
-## 🔗 Instructions on Linking to GitHub
+## 🛠️ Suíte de Ferramentas MCP (STDIO JSON-RPC 2.0)
 
-To link this local vault to your personal GitHub repository, follow these steps in your terminal:
+O servidor MCP expõe as seguintes ferramentas para assistentes de IA:
 
-1. **Create a GitHub Repository**:
-   Create a new, empty repository on GitHub (do not initialize it with README, license, or gitignore).
+| Ferramenta MCP | Descrição |
+| :--- | :--- |
+| `query_knowledge_base` | Realiza **Busca Híbrida RRF** (Palavras-Chave + Similaridade Vetorial) retornando os 5 trechos/notas mais relevantes com `semanticScore` e `keywordScore`. |
+| `read_note` | Lê o conteúdo completo de uma nota pelo caminho relativo, incluindo frontmatter e metadados. |
+| `write_note` | Cria ou atualiza uma nota no vault com validação de frontmatter, limite de 200 linhas e reindexação vetorial incremental. |
+| `move_note` | Renomeia ou move uma nota preservando caminhos relativos. |
+| `delete_note` | Remove uma nota do vault. |
+| `validate_vault` | Executa o validador automatizado verificando estrutura, schemas YAML, links e limites de linha. |
+| `reindex_vault` | Re-indexa todo o vault gerando os embeddings semânticos em `.obsidian/rag-index.json`. |
+| `get_mcp_metrics` | Retorna o relatório operacional de latência, consultas e tokens consumidos. |
 
-2. **Add Remote URL**:
-   Run the following command in the project root folder:
-   ```bash
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
-   ```
+---
 
-3. **Rename Default Branch (Optional but recommended)**:
-   ```bash
-   git branch -M main
-   ```
+## 📂 Estrutura do Repositório e Vault
 
-4. **Add and Commit Existing Files**:
-   ```bash
-   git add .
-   git commit -m "feat: init infrastructure and templates for RAG-Optimized Obsidian Vault"
-   ```
+- **`/references`**: Notas de referência modulares organizadas por stack (`nodejs`, `react`, `nextjs`, `adonisjs4`, `adonisjs7`).
+- **`/templates`**: Templates padronizados de notas e contextos de projetos.
+- **`lib/rag/`**: Módulos do motor RAG local:
+  - `embeddings.js`: Abstração de embeddings (Transformers.js ONNX, Ollama, OpenAI).
+  - `chunker.js`: Fragmentador de notas markdown por seções (`#`, `##`, `###`).
+  - `vectorStore.js`: Banco vetorial local (`.obsidian/rag-index.json`) com similaridade de cosseno em `Float32Array`.
+- **`validate_vault.js`**: Script de validação rigorosa de notas e links.
+- **`fix_token_density.js`**: Utilitário de correção de metadados de densidade.
 
-5. **Push to GitHub**:
-   ```bash
-   git push -u origin main
-   ```
+---
+
+## 🏷️ Schema YAML Frontmatter Exigido
+
+Cada nota de referência deve conter o seguinte schema no frontmatter:
+
+```yaml
+---
+topic: "Event Loop e Concorrência Assíncrona"
+tags:
+  - "_shared/nodejs"
+  - "async"
+sources:
+  - "https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick"
+verified_by_reviewer: false
+last_updated: "2026-09-02T19:00:00.000Z"
+token_density:
+  line_count: 45
+  character_count: 1420
+---
+```
+
+---
+
+## 🧪 Testes de Integração e Qualidade de Código
+
+Para executar os testes de integração do RAG local e validação de salvamento:
+
+```bash
+node test_local_rag.js
+```
+
+---
+
+## 📄 Licença
+
+ISC - **inovan.do**
