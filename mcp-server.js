@@ -65,8 +65,23 @@ function formatToolResult(name, result) {
       if (result.totalPending === 0) {
         textContent = `✅ Nenhuma nota pendente de revisão humana! Todas as notas estão aprovadas (verified_by_reviewer: true).`;
       } else {
-        textContent = `📌 **Notas Pendentes de Revisão Humana (${result.totalPending}):**\n\n`;
-        textContent += result.pendingNotes.map(n => `- **${n.filePath}** | Tópico: ${n.topic} | Tags: ${n.tags.join(', ')} | Modificado: ${n.last_updated}`).join('\n');
+        const start = result.offset + 1;
+        const end = Math.min(result.totalPending, result.offset + result.pendingNotes.length);
+        const folderSummary = Object.entries(result.pendingByFolder || {})
+          .map(([folder, count]) => `- \`${folder}/\`: ${count} notas pendentes`)
+          .join('\n');
+
+        textContent = `📌 **Relatório de Notas Pendentes de Revisão Humana:**\n`;
+        textContent += `- **Total de Pendências no Vault:** ${result.totalPending}\n`;
+        textContent += `- **Exibindo:** ${start} a ${end} (Offset: ${result.offset} | Limite: ${result.limit})\n\n`;
+        if (folderSummary) {
+          textContent += `📊 **Resumo de Pendências por Pasta:**\n${folderSummary}\n\n`;
+        }
+        textContent += `📋 **Lista Paginada de Pendências:**\n`;
+        textContent += result.pendingNotes.map(n => `- **${n.filePath}** | Tópico: ${n.topic} | Modificado: ${n.last_updated}`).join('\n');
+        if (result.hasMore) {
+          textContent += `\n\n💡 *Existem mais notas pendentes. Use limit=${result.limit} e offset=${result.offset + result.limit} para avançar.*`;
+        }
       }
     } else if (name === 'list_skills') {
       if (!result.skills || result.skills.length === 0) {
@@ -126,7 +141,7 @@ async function handleMessage(message) {
     sendResponse(message.id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "obsidian-rag-mcp-server", version: "1.2.0" }
+      serverInfo: { name: "obsidian-rag-mcp-server", version: "1.2.1" }
     });
     return;
   }
@@ -214,4 +229,4 @@ process.stdin.on('data', (chunk) => {
   }
 });
 
-console.error("Obsidian RAG MCP Server v1.2.0 (Guidelines, Skills & Agents Support) iniciado. Ready.");
+console.error("Obsidian RAG MCP Server v1.2.1 iniciado. Ready.");
