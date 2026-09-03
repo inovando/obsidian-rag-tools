@@ -29,39 +29,32 @@ Ferramentas CLI e Servidor MCP avançados para criar, validar, indexar vetores, 
 
 ---
 
-## 🚀 Guia de Comandos CLI
+## 🚀 Guia de Instalação e Uso
 
-### 1. Inicialização do Vault (Estrutura Inicial)
-*(Cria as pastas `templates/`, `references/`, `AGENTS.md` e a estrutura base se ainda não existirem)*
+### Opção A: Instalação Global (Recomendado)
+A forma mais simples e rápida de usar as CLI ferramentas no terminal:
 ```bash
-npx -y @inovan.do/obsidian-rag-tools obsidian-rag-init
+npm i -g @inovan.do/obsidian-rag-tools
 ```
 
-### 2. Setup Automático do MCP, Diretrizes e Regras de IA
-*(Configura automaticamente Claude Desktop, Cursor, Antigravity, VS Code, Roo/Cline e Copilot/Codex)*
+Após instalar globalmente, execute os comandos diretamente no diretório do seu vault:
 ```bash
-npx -y @inovan.do/obsidian-rag-tools obsidian-rag-setup
+obsidian-rag-init       # 1. Inicializar estrutura do vault (templates/, references/, AGENTS.md)
+obsidian-rag-setup      # 2. Configurar MCP e regras no Claude, Cursor, Antigravity, VS Code
+obsidian-rag-index      # 3. Gerar/Atualizar o banco vetorial RAG (.obsidian/rag-index.json)
+obsidian-rag-validate   # 4. Validar integridade e links do vault
 ```
 
-### 3. Indexação Vetorial (Gerar Banco Vetorial RAG)
-*(Cria o arquivo `.obsidian/rag-index.json` com os embeddings semânticos 100% offline)*
-```bash
-npx -y @inovan.do/obsidian-rag-tools obsidian-rag-index
-```
+---
 
-### 4. Validação da Integridade do Vault
-```bash
-npx -y @inovan.do/obsidian-rag-tools obsidian-rag-validate
-```
+### Opção B: Uso Sem Instalação via `npx` (Usando `-p`)
+Caso prefira não instalar globalmente, use o parâmetro `-p` (`--package`) para informar o pacote escopado ao `npx`:
 
-### 5. Ingestão / Importação de Repositório Externo (Opcional)
 ```bash
-npx -y @inovan.do/obsidian-rag-tools obsidian-rag-import /caminho/para/projeto-externo
-```
-
-### 6. Busca Semântica pelo Terminal
-```bash
-npx -y @inovan.do/obsidian-rag-tools obsidian-rag-query "como funciona concorrência assíncrona no Node"
+npx -p @inovan.do/obsidian-rag-tools obsidian-rag-init
+npx -p @inovan.do/obsidian-rag-tools obsidian-rag-setup
+npx -p @inovan.do/obsidian-rag-tools obsidian-rag-index
+npx -p @inovan.do/obsidian-rag-tools obsidian-rag-validate
 ```
 
 ---
