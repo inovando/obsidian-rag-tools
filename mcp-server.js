@@ -44,7 +44,8 @@ function formatToolResult(name, result) {
         textContent = result.results.map(r => {
           const tagsStr = (r.frontmatter && Array.isArray(r.frontmatter.tags)) ? r.frontmatter.tags.join(', ') : 'Nenhuma';
           const topicStr = (r.frontmatter && r.frontmatter.topic) || 'Nenhum';
-          return `### Nota: ${r.filePath} (Score RRF: ${r.score})\n- **Tópico:** ${topicStr}\n- **Tags:** ${tagsStr}\n- **Semantic Score:** ${r.semanticScore} | **Keyword Score:** ${r.keywordScore}\n\n**Trecho:**\n${r.excerpt}\n\n---`;
+          const excerptBlock = r.excerpt !== undefined ? `\n\n**Trecho:**\n${r.excerpt}` : '';
+          return `### Nota: ${r.filePath} (Score RRF: ${r.score})\n- **Tópico:** ${topicStr}\n- **Tags:** ${tagsStr}\n- **Semantic Score:** ${r.semanticScore} | **Keyword Score:** ${r.keywordScore}${excerptBlock}\n\n---`;
         }).join('\n\n');
       }
       // R2b: Exibir aviso de índice desatualizado
@@ -84,7 +85,7 @@ function formatToolResult(name, result) {
         textContent = `📌 **Relatório de Notas Pendentes de Revisão Humana:**\n`;
         textContent += `- **Total de ${totalLabel}:** ${result.totalPending}${result.pathPrefix ? ` (de ${result.vaultTotalPending} no vault)` : ''}\n`;
         textContent += `- **Exibindo:** ${start} a ${end} (Offset: ${result.offset} | Limite: ${result.limit})\n\n`;
-        if (folderSummary) {
+        if (folderSummary && (result.offset === 0 || !result.offset)) {
           textContent += `📊 **Resumo de Pendências por Pasta:**\n${folderSummary}\n\n`;
         }
         textContent += `📋 **Lista Paginada de Pendências:**\n`;
@@ -175,9 +176,9 @@ async function handleMessage(message) {
       } else if (name === 'write_note') {
         result = await handleWriteNote(args || {});
       } else if (name === 'move_note') {
-        result = handleMoveNote(args || {});
+        result = await handleMoveNote(args || {});
       } else if (name === 'delete_note') {
-        result = handleDeleteNote(args || {});
+        result = await handleDeleteNote(args || {});
       } else if (name === 'manage_guidelines') {
         result = handleManageGuidelines(args || {});
       } else if (name === 'get_pending_reviews') {
