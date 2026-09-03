@@ -31,24 +31,37 @@ Ferramentas CLI e Servidor MCP avançados para criar, validar, indexar vetores, 
 
 ## 🚀 Guia de Comandos CLI
 
-### 1. Setup Automático do MCP, Diretrizes e Regras de IA
+### 1. Inicialização do Vault (Estrutura Inicial)
+*(Cria as pastas `templates/`, `references/`, `AGENTS.md` e a estrutura base se ainda não existirem)*
 ```bash
-npx -y --package=@inovan.do/obsidian-rag-tools obsidian-rag-setup
+npx -y @inovan.do/obsidian-rag-tools obsidian-rag-init
 ```
 
-### 2. Indexação Vetorial (Gerar Banco Vetorial RAG)
+### 2. Setup Automático do MCP, Diretrizes e Regras de IA
+*(Configura automaticamente Claude Desktop, Cursor, Antigravity, VS Code, Roo/Cline e Copilot/Codex)*
 ```bash
-npx -y --package=@inovan.do/obsidian-rag-tools obsidian-rag-index [caminho-do-vault]
+npx -y @inovan.do/obsidian-rag-tools obsidian-rag-setup
 ```
 
-### 3. Ingestão / Importação de Repositório Externo
+### 3. Indexação Vetorial (Gerar Banco Vetorial RAG)
+*(Cria o arquivo `.obsidian/rag-index.json` com os embeddings semânticos 100% offline)*
 ```bash
-npx -y --package=@inovan.do/obsidian-rag-tools obsidian-rag-import /caminho/para/projeto-externo
+npx -y @inovan.do/obsidian-rag-tools obsidian-rag-index
 ```
 
-### 4. Busca Semântica pelo Terminal
+### 4. Validação da Integridade do Vault
 ```bash
-npx -y --package=@inovan.do/obsidian-rag-tools obsidian-rag-query "como funciona concorrência assíncrona no Node"
+npx -y @inovan.do/obsidian-rag-tools obsidian-rag-validate
+```
+
+### 5. Ingestão / Importação de Repositório Externo (Opcional)
+```bash
+npx -y @inovan.do/obsidian-rag-tools obsidian-rag-import /caminho/para/projeto-externo
+```
+
+### 6. Busca Semântica pelo Terminal
+```bash
+npx -y @inovan.do/obsidian-rag-tools obsidian-rag-query "como funciona concorrência assíncrona no Node"
 ```
 
 ---
