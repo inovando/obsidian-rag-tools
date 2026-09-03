@@ -14,6 +14,7 @@ const { handleGetMcpMetrics } = require('./lib/tools/metrics');
 const { recordError } = require('./lib/metrics');
 const yaml = require('js-yaml');
 const { tools } = require('./lib/schemas');
+const PKG_VERSION = require('./package.json').version;
 
 function formatToolResult(name, result) {
   let textContent = '';
@@ -45,6 +46,10 @@ function formatToolResult(name, result) {
           const topicStr = (r.frontmatter && r.frontmatter.topic) || 'Nenhum';
           return `### Nota: ${r.filePath} (Score RRF: ${r.score})\n- **Tópico:** ${topicStr}\n- **Tags:** ${tagsStr}\n- **Semantic Score:** ${r.semanticScore} | **Keyword Score:** ${r.keywordScore}\n\n**Trecho:**\n${r.excerpt}\n\n---`;
         }).join('\n\n');
+      }
+      // R2b: Exibir aviso de índice desatualizado
+      if (result.indexWarning) {
+        textContent = `${result.indexWarning}\n\n${textContent}`;
       }
     } else if (name === 'read_note') {
       const fmYaml = (result.frontmatter && Object.keys(result.frontmatter).length > 0)
@@ -146,7 +151,7 @@ async function handleMessage(message) {
     sendResponse(message.id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "obsidian-rag-mcp-server", version: "1.2.1" }
+      serverInfo: { name: "obsidian-rag-mcp-server", version: PKG_VERSION }
     });
     return;
   }
@@ -234,4 +239,4 @@ process.stdin.on('data', (chunk) => {
   }
 });
 
-console.error("Obsidian RAG MCP Server v1.2.1 iniciado. Ready.");
+console.error(`Obsidian RAG MCP Server v${PKG_VERSION} iniciado. Ready.`);

@@ -483,7 +483,17 @@ function main() {
       
       warningsByFolder[folder] = (warningsByFolder[folder] || 0) + fileWarnings.length;
       for (const warn of fileWarnings) {
-        warningCounts[warn] = (warningCounts[warn] || 0) + 1;
+        // B3b: Normalizar categoria removendo caminhos específicos
+        // Ex: "Markdown link target not found (example link): ./ADR-010.md" → "Markdown link target not found (example link)"
+        const categoryKey = warn
+          .replace(/: \.{0,2}\/[^\s]*/g, '')            // remove ': ./path' e ': ../path'
+          .replace(/: ['"][^'"]+['"]/g, '')               // remove ': 'value''
+          .replace(/\(actual: \d+ lines\)/, '(exceeds limit)')  // normalize line count
+          .replace(/contains placeholder: '.+?' \(imported note\)/, "contains placeholder (imported note)")  // normalize placeholder
+          .replace(/ [A-Z0-9]{2}:[A-Z0-9]{2}:[A-Z0-9]{2}\}\.md/g, '')  // remove timestamp patterns
+          .replace(/: [a-z][^\s]*\.[a-z]+$/i, '')         // remove ': filename.ext' at end
+          .trim();
+        warningCounts[categoryKey] = (warningCounts[categoryKey] || 0) + 1;
       }
 
       if (isVerbose) {
