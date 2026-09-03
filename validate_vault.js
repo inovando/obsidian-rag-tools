@@ -54,8 +54,9 @@ function checkHeadingExists(content, headingAnchor) {
 }
 
 function main() {
-  const targetDir = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd();
-  
+  const targetDir = process.argv[2] && !process.argv[2].startsWith('--') ? path.resolve(process.argv[2]) : process.cwd();
+  const isVerbose = process.argv.includes('--verbose') || process.argv.includes('-v');
+
   if (!fs.existsSync(targetDir)) {
     console.error("Directory does not exist");
     process.exit(1);
@@ -471,14 +472,40 @@ function main() {
   }
   
   let totalWarnings = 0;
+  const warningCounts = {};
+  const warningsByFolder = {};
+
   for (const [file, fileWarnings] of Object.entries(allWarnings)) {
     if (fileWarnings.length > 0) {
       totalWarnings += fileWarnings.length;
-      console.warn(`File: ${path.relative(targetDir, file)}`);
+      const relPath = path.relative(targetDir, file);
+      const folder = relPath.includes(path.sep) ? relPath.split(path.sep)[0] : 'raiz';
+      
+      warningsByFolder[folder] = (warningsByFolder[folder] || 0) + fileWarnings.length;
       for (const warn of fileWarnings) {
-        console.warn(`  - ${warn}`);
+        warningCounts[warn] = (warningCounts[warn] || 0) + 1;
+      }
+
+      if (isVerbose) {
+        console.log(`File: ${relPath}`);
+        for (const warn of fileWarnings) {
+          console.log(`  - Warning: ${warn}`);
+        }
       }
     }
+  }
+
+  if (!isVerbose && totalWarnings > 0) {
+    console.log(`\n--- Warnings Summary (${totalWarnings} total) ---`);
+    console.log("By Folder:");
+    for (const [folder, count] of Object.entries(warningsByFolder)) {
+      console.log(`  - ${folder}/: ${count} warnings`);
+    }
+    console.log("By Category:");
+    for (const [warn, count] of Object.entries(warningCounts)) {
+      console.log(`  - ${count}x ${warn}`);
+    }
+    console.log("(Pass --verbose flag to list all individual file warnings)");
   }
   
   console.log(`\nValidation complete: ${totalErrors} errors, ${totalWarnings} warnings`);
