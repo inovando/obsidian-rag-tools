@@ -63,7 +63,11 @@ function formatToolResult(name, result) {
       }
     } else if (name === 'get_pending_reviews') {
       if (result.totalPending === 0) {
-        textContent = `✅ Nenhuma nota pendente de revisão humana! Todas as notas estão aprovadas (verified_by_reviewer: true).`;
+        if (result.pathPrefix) {
+          textContent = `ℹ️ Nenhuma nota pendente de revisão para o filtro '${result.pathPrefix}' (o vault possui ${result.vaultTotalPending} pendências no total).`;
+        } else {
+          textContent = `✅ Nenhuma nota pendente de revisão humana! Todas as notas estão aprovadas (verified_by_reviewer: true).`;
+        }
       } else {
         const start = result.offset + 1;
         const end = Math.min(result.totalPending, result.offset + result.pendingNotes.length);
@@ -71,8 +75,9 @@ function formatToolResult(name, result) {
           .map(([folder, count]) => `- \`${folder}/\`: ${count} notas pendentes`)
           .join('\n');
 
+        const totalLabel = result.pathPrefix ? `Pendências no Filtro ('${result.pathPrefix}')` : 'Pendências no Vault';
         textContent = `📌 **Relatório de Notas Pendentes de Revisão Humana:**\n`;
-        textContent += `- **Total de Pendências no Vault:** ${result.totalPending}\n`;
+        textContent += `- **Total de ${totalLabel}:** ${result.totalPending}${result.pathPrefix ? ` (de ${result.vaultTotalPending} no vault)` : ''}\n`;
         textContent += `- **Exibindo:** ${start} a ${end} (Offset: ${result.offset} | Limite: ${result.limit})\n\n`;
         if (folderSummary) {
           textContent += `📊 **Resumo de Pendências por Pasta:**\n${folderSummary}\n\n`;

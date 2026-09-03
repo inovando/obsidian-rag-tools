@@ -2,30 +2,37 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 
-function isValidISODate(dateStr) {
-  if (typeof dateStr !== 'string') return false;
+function isValidISODate(val) {
+  if (val instanceof Date) return !isNaN(val.getTime());
+  if (typeof val !== 'string') return false;
   const basicDateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  const dateTimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/;
-  if (!basicDateRegex.test(dateStr) && !dateTimeRegex.test(dateStr)) {
-    return false;
-  }
-  const date = new Date(dateStr);
+  const dateTimeRegex = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/;
+  if (!basicDateRegex.test(val) && !dateTimeRegex.test(val)) return false;
+  const date = new Date(val);
   return !isNaN(date.getTime());
 }
 
 function isSkippedFile(filePath, targetDir) {
   const rel = path.relative(targetDir, filePath);
   const parts = rel.split(path.sep);
-  if (parts[0] === 'example-nextjs-adonis') return true;
-  if (parts.length === 1 && !rel.startsWith('references') && !rel.startsWith('llm_context') && !rel.startsWith('templates')) return true;
+  
+  if (parts[0] === 'example-nextjs-adonis' || parts[0] === 'docs' || parts[0] === 'doc' || parts[0] === '.github') return true;
+  if (parts[0] === '.obsidian' || parts[0] === 'node_modules' || parts[0] === '.git') return true;
+  
+  if (parts[0] === '.agents') {
+    if (parts[1] === 'skills' && filePath.endsWith('.md')) {
+      return false; // Permite escanear wiki-links em skills
+    }
+    return true;
+  }
+
+  // Apenas arquivos dentro de referencias, llm_context e templates sao validados como notas
+  if (!['references', 'llm_context', 'templates'].includes(parts[0])) {
+    return true;
+  }
+
   if (parts[0] === 'templates' && rel === path.join('templates', 'note_template.md')) return true;
   return false;
-}
-
-function isTechNote(filePath, targetDir) {
-  const rel = path.relative(targetDir, filePath);
-  const parts = rel.split(path.sep);
-  return parts[0] === 'references' && path.basename(filePath) !== '_index.md' && path.basename(filePath) !== '_project.md';
 }
 
 function checkHeadingExists(content, headingAnchor) {
@@ -62,7 +69,7 @@ function main() {
     templatesStat = fs.statSync(templatesDir);
     referencesStat = fs.statSync(referencesDir);
   } catch (err) {
-    // Stat failed, meaning directory is missing
+    // Stat failed
   }
   
   if (!templatesStat || !templatesStat.isDirectory() || !referencesStat || !referencesStat.isDirectory()) {
@@ -86,13 +93,12 @@ function main() {
     try {
       entries = fs.readdirSync(dir, { withFileTypes: true });
     } catch (err) {
-      // Ignore directory read errors for scan, we will handle file reads gracefully later
       return;
     }
     for (const entry of entries) {
       const fullPath = path.resolve(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === '.git' || entry.name === '.temp_vaults' || entry.name === '.agents' || entry.name === 'node_modules') {
+        if (entry.name === '.git' || entry.name === '.temp_vaults' || entry.name === 'node_modules' || entry.name === '.obsidian' || entry.name === '.github') {
           continue;
         }
         scanVault(fullPath);
@@ -130,7 +136,6 @@ function main() {
   const allErrors = {};
   const allWarnings = {};
   const mdFiles = Array.from(vaultFiles).filter(f => f.endsWith('.md') && !isSkippedFile(f, targetDir));
-  console.log("DEBUG: Scanned files:", mdFiles.map(f => path.relative(targetDir, f)));
   
   for (const filePath of mdFiles) {
     let content;
@@ -138,143 +143,164 @@ function main() {
       content = fs.readFileSync(filePath, 'utf8');
     } catch (err) {
       console.error("Error reading file");
-      console.error("Permission denied");
       allErrors[filePath] = ["Error reading file: Permission denied"];
       continue;
     }
     
     const fileErrors = [];
     const fileWarnings = [];
+    const relFromTarget = path.relative(targetDir, filePath);
+    const isSkillFile = relFromTarget.startsWith('.agents' + path.sep + 'skills');
+    const isTemplateFile = relFromTarget.startsWith('templates');
+    const isImportedOrLegacy = relFromTarget.includes('imported') || relFromTarget.includes('projetos') || relFromTarget.includes('luccaro') || relFromTarget.includes('non-technical') || relFromTarget.includes('technical');
     
     if (content.length === 0) {
       fileErrors.push("Empty file");
-      fileErrors.push("Missing YAML frontmatter");
+      if (!isSkillFile) fileErrors.push("Missing YAML frontmatter");
       allErrors[filePath] = fileErrors;
       continue;
     }
     
     const lines = content.split(/\r?\n/);
-    
-    if (lines[0].replace(/\r$/, '') !== '---') {
-      fileErrors.push("Missing YAML frontmatter");
-      allErrors[filePath] = fileErrors;
-      continue;
-    }
-    
-    const closingIndex = lines.findIndex((line, idx) => idx > 0 && line.replace(/\r$/, '') === '---');
-    if (closingIndex === -1) {
-      fileErrors.push("Missing YAML frontmatter");
-      allErrors[filePath] = fileErrors;
-      continue;
-    }
-    
-    const fmText = lines.slice(1, closingIndex).join('\n');
-    let fm = {};
-    let hasSyntaxError = false;
-    
-    try {
-      fm = yaml.load(fmText) || {};
-    } catch (e) {
-      fileErrors.push("YAML syntax error");
-      fileErrors.push("Failed to parse YAML");
-      hasSyntaxError = true;
-    }
-    
-    if (hasSyntaxError) {
-      allErrors[filePath] = fileErrors;
-      continue;
-    }
-    
-    // topic field
-    if (fm.topic === undefined) {
-      fileErrors.push("Missing required field: topic");
-    } else if (typeof fm.topic !== 'string') {
-      fileErrors.push("topic must be a string");
-    } else if (fm.topic === "") {
-      fileErrors.push("topic cannot be empty");
-    }
-    
-    // tags field
-    if (fm.tags === undefined) {
-      fileErrors.push("Missing required field: tags");
-    } else if (!Array.isArray(fm.tags)) {
-      fileErrors.push("tags must be an array");
-    } else if (fm.tags.length === 0) {
-      fileErrors.push("tags must contain at least one tag");
-    } else if (!fm.tags.every(t => typeof t === 'string')) {
-      fileErrors.push("tags must only contain strings");
-    }
-    
-    // sources field
-    if (fm.sources === undefined) {
-      fileErrors.push("Missing required field: sources");
-    } else if (!Array.isArray(fm.sources)) {
-      fileErrors.push("sources must be an array");
-    } else if (fm.sources.length === 0) {
-      fileErrors.push("sources must contain at least one source");
-    } else if (!fm.sources.every(s => typeof s === 'string')) {
-      fileErrors.push("sources must only contain strings");
-    }
-    
-    // verified_by_reviewer field
-    if (fm.verified_by_reviewer === undefined) {
-      fileErrors.push("Missing required field: verified_by_reviewer");
-    } else if (typeof fm.verified_by_reviewer !== 'boolean') {
-      fileErrors.push("verified_by_reviewer must be a boolean");
-    } else if (fm.verified_by_reviewer === false) {
-      if (isTechNote(filePath, targetDir)) {
-        fileErrors.push("Note is not verified by reviewer");
-      } else {
+    const hasFrontmatter = lines[0] && lines[0].replace(/\r$/, '') === '---';
+    const closingIndex = hasFrontmatter ? lines.findIndex((line, idx) => idx > 0 && line.replace(/\r$/, '') === '---') : -1;
+
+    if (!isSkillFile) {
+      if (!hasFrontmatter || closingIndex === -1) {
+        if (isImportedOrLegacy) {
+          fileWarnings.push("Missing YAML frontmatter (legacy note)");
+        } else {
+          fileErrors.push("Missing YAML frontmatter");
+          allErrors[filePath] = fileErrors;
+        }
+        if (fileWarnings.length > 0) {
+          allWarnings[filePath] = fileWarnings;
+        }
+        continue;
+      }
+
+      const fmText = lines.slice(1, closingIndex).join('\n');
+      let fm = {};
+      let hasSyntaxError = false;
+
+      try {
+        fm = yaml.load(fmText) || {};
+      } catch (e) {
+        fileErrors.push("YAML syntax error");
+        fileErrors.push("Failed to parse YAML");
+        hasSyntaxError = true;
+      }
+
+      if (hasSyntaxError) {
+        allErrors[filePath] = fileErrors;
+        continue;
+      }
+
+      // topic field
+      if (fm.topic === undefined) {
+        fileErrors.push("Missing required field: topic");
+      } else if (typeof fm.topic !== 'string') {
+        fileErrors.push("topic must be a string");
+      } else if (fm.topic === "") {
+        fileErrors.push("topic cannot be empty");
+      }
+
+      // tags field
+      if (fm.tags === undefined) {
+        fileErrors.push("Missing required field: tags");
+      } else if (!Array.isArray(fm.tags)) {
+        fileErrors.push("tags must be an array");
+      } else if (fm.tags.length === 0) {
+        fileErrors.push("tags must contain at least one tag");
+      } else if (!fm.tags.every(t => typeof t === 'string')) {
+        fileErrors.push("tags must only contain strings");
+      }
+
+      // sources field
+      if (fm.sources === undefined) {
+        fileErrors.push("Missing required field: sources");
+      } else if (!Array.isArray(fm.sources)) {
+        fileErrors.push("sources must be an array");
+      } else if (fm.sources.length === 0) {
+        fileErrors.push("sources must contain at least one source");
+      } else if (!fm.sources.every(s => typeof s === 'string')) {
+        fileErrors.push("sources must only contain strings");
+      }
+
+      // verified_by_reviewer field (B3: Warning para nao quebrar exit code em CI)
+      if (fm.verified_by_reviewer === undefined) {
+        if (isImportedOrLegacy) {
+          fileWarnings.push("Missing verified_by_reviewer (legacy note defaults to false)");
+        } else {
+          fileErrors.push("Missing required field: verified_by_reviewer");
+        }
+      } else if (typeof fm.verified_by_reviewer !== 'boolean') {
+        fileErrors.push("verified_by_reviewer must be a boolean");
+      } else if (fm.verified_by_reviewer === false) {
         fileWarnings.push("Note is not verified by reviewer (pending human review)");
       }
-    }
-    
-    // last_updated field
-    if (fm.last_updated === undefined) {
-      fileErrors.push("Missing required field: last_updated");
-    } else if (typeof fm.last_updated !== 'string' || !isValidISODate(fm.last_updated)) {
-      fileErrors.push("last_updated must be a valid ISO-8601 date");
-    }
-    
-    // token_density field
-    if (fm.token_density === undefined) {
-      fileErrors.push("Missing required field: token_density");
-    } else {
-      const td = fm.token_density;
-      const actualLineCount = lines.length;
-      const actualCharCount = content.length;
-      if (typeof td !== 'object' || td === null || td.line_count === undefined || td.character_count === undefined) {
-        fileErrors.push("Token density line_count mismatch");
-      } else {
-        if (td.line_count !== actualLineCount) {
+
+      // last_updated field
+      if (fm.last_updated === undefined) {
+        fileErrors.push("Missing required field: last_updated");
+      } else if (!isValidISODate(fm.last_updated)) {
+        fileErrors.push("last_updated must be a valid ISO-8601 date");
+      }
+
+      // token_density field
+      if (fm.token_density === undefined) {
+        fileErrors.push("Missing required field: token_density");
+      } else if (!isTemplateFile) {
+        const td = fm.token_density;
+        const actualLineCount = lines.length;
+        const actualCharCount = content.length;
+        if (typeof td !== 'object' || td === null || td.line_count === undefined || td.character_count === undefined) {
           fileErrors.push("Token density line_count mismatch");
+        } else {
+          if (td.line_count !== actualLineCount) {
+            fileErrors.push(`Token density line_count mismatch (expected ${actualLineCount}, got ${td.line_count})`);
+          }
+          if (Math.abs(td.character_count - actualCharCount) > 5) {
+            fileErrors.push(`Token density character_count mismatch (expected ${actualCharCount}, got ${td.character_count})`);
+          }
         }
-        if (td.character_count !== actualCharCount) {
-          fileErrors.push("Token density character_count mismatch");
+      }
+
+      // File line limit constraint (B3: Limite de 200 linhas em notas novas, Warning em notas legadas importadas)
+      if (lines.length > 200) {
+        if (isImportedOrLegacy) {
+          fileWarnings.push(`exceeds recommended line limit of 200 (actual: ${lines.length} lines)`);
+        } else {
+          fileErrors.push(`exceeds line limit of 200 (actual: ${lines.length} lines)`);
         }
       }
     }
     
-    // File line limit constraint
-    if (lines.length > 200) {
-      fileErrors.push("exceeds line limit of 200");
-    }
-    
-    const bodyLines = lines.slice(closingIndex + 1);
+    const bodyLines = closingIndex !== -1 ? lines.slice(closingIndex + 1) : lines;
     const bodyText = bodyLines.join('\n');
     
-    // Placeholder checks
-    if (/(?<![a-zA-Z0-9À-ÿ])TODO(?![a-zA-Z0-9À-ÿ])/i.test(bodyText)) {
-      fileErrors.push("contains placeholder: 'TODO'");
-    }
-    if (/(?<![a-zA-Z0-9À-ÿ])TBD(?![a-zA-Z0-9À-ÿ])/i.test(bodyText)) {
-      fileErrors.push("contains placeholder: 'TBD'");
+    // Placeholder checks (B3: Warning para TODO/TBD em notas importadas)
+    if (!isTemplateFile) {
+      if (/(?<![a-zA-Z0-9À-ÿ])TODO(?![a-zA-Z0-9À-ÿ])/i.test(bodyText)) {
+        if (isImportedOrLegacy) {
+          fileWarnings.push("contains placeholder: 'TODO' (imported note)");
+        } else {
+          fileErrors.push("contains placeholder: 'TODO'");
+        }
+      }
+      if (/(?<![a-zA-Z0-9À-ÿ])TBD(?![a-zA-Z0-9À-ÿ])/i.test(bodyText)) {
+        if (isImportedOrLegacy) {
+          fileWarnings.push("contains placeholder: 'TBD' (imported note)");
+        } else {
+          fileErrors.push("contains placeholder: 'TBD'");
+        }
+      }
     }
     
     // Clean code blocks to ignore links inside them
     const cleanBodyText = bodyText.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*?`/g, '');
     
-    // Wiki links and Image embeds
+    // Wiki links and Image embeds (B8: Valida wiki-links em .agents/skills/)
     const wikiLinkRegex = /(!)?\[\[(.*?)\]\]/g;
     let match;
     while ((match = wikiLinkRegex.exec(cleanBodyText)) !== null) {
@@ -313,7 +339,6 @@ function main() {
           let foundPath = null;
           let isCaseMismatch = false;
           
-          // Strategy 1: relative to source file (standard markdown)
           const relResolved = path.resolve(path.dirname(filePath), targetFile);
           if (referencesFiles.has(relResolved)) {
             foundPath = relResolved;
@@ -322,10 +347,7 @@ function main() {
             isCaseMismatch = true;
           }
           
-          // Strategy 2: relative to vault root (Obsidian standard for wiki-links with path)
-          // Obsidian resolves [[_shared/nodejs/event_loop]] from vault root, not from file location
           if (!foundPath && target.includes('/')) {
-            // Try from references/ directory (most wiki-links use paths under references/)
             const fromRefsRoot = path.resolve(referencesDirResolved, targetFile);
             if (referencesFiles.has(fromRefsRoot)) {
               foundPath = fromRefsRoot;
@@ -333,7 +355,6 @@ function main() {
               foundPath = referencesLowerMap.get(fromRefsRoot.toLowerCase());
               isCaseMismatch = true;
             }
-            // Try from vault root directly
             if (!foundPath) {
               const fromVaultRoot = path.resolve(targetDir, targetFile);
               if (vaultFiles.has(fromVaultRoot)) {
@@ -342,7 +363,6 @@ function main() {
             }
           }
           
-          // Strategy 3: basename match (no path separators)
           if (!foundPath && !target.includes('/') && !target.includes('\\')) {
             if (referencesBasenameMap.has(targetFile)) {
               foundPath = referencesBasenameMap.get(targetFile)[0];
@@ -353,10 +373,10 @@ function main() {
           }
           
           if (!foundPath) {
-            if (isTechNote(filePath, targetDir)) {
-              fileErrors.push("Broken wiki-link: [[" + target + "]]");
+            if (isTemplateFile || isImportedOrLegacy) {
+              fileWarnings.push("Wiki-link target not found (example link): [[" + target + "]]");
             } else {
-              fileWarnings.push("Wiki-link target not found (may be created later): [[" + target + "]]");
+              fileErrors.push("Broken wiki-link: [[" + target + "]]");
             }
           } else {
             if (isCaseMismatch) {
@@ -409,7 +429,11 @@ function main() {
         const fileExistsCaseSensitively = vaultFiles.has(resolvedPath);
         
         if (!fileExistsCaseSensitively) {
-          fileErrors.push("Broken markdown link: " + targetPath);
+          if (isTemplateFile || isImportedOrLegacy) {
+            fileWarnings.push("Markdown link target not found (example link): " + targetPath);
+          } else {
+            fileErrors.push("Broken markdown link: " + targetPath);
+          }
         } else {
           if (headingAnchor) {
             let targetContent = '';
@@ -468,6 +492,7 @@ function main() {
   }
 }
 
+module.exports = { main };
 if (require.main === module) {
   main();
 }

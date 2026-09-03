@@ -9,8 +9,8 @@ sources: ["https://docs.adonisjs.com", "https://nextjs.org/docs"]
 verified_by_reviewer: false
 last_updated: "2026-06-18T15:00:00Z"
 token_density:
-  line_count: 52
-  character_count: 1477
+  line_count: 51
+  character_count: 1546
 ---
 
 # Proj-WebApp — Contexto para LLM
@@ -34,11 +34,10 @@ token_density:
 
 ## Notas Específicas do Projeto (a criar)
 - [[proj-megabrain-adonisjs7-auth]]
-- [[ioc-di]]
-- [[routing]]
+- [[shared-adonisjs7-setup-ioc-di]]
+- [[shared-adonisjs7-routing-lucid-middleware]]
 - [[shared-nextjs-app-router]]
-- [[rsc]]
-- [[data_fetching]]
+- [[shared-nextjs-data-fetching-caching]]
 
 ## Decisões do Projeto
 - Auth: Session guard (cookies) + CSRF protection
