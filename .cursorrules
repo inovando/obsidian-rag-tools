@@ -54,7 +54,7 @@ Ao finalizar uma sessão, o modelo DEVE:
 - Nota em proj-webapp pode linkar para proj-legacy se necessário
 
 ## Validação
-- Rodar `node validate_vault.js` após escrever/atualizar
+- Usar a ferramenta MCP `validate_vault` (ou rodar `node validate_vault.js` caso MCP não esteja ativo) após escrever/atualizar notas
 - Exit code 0 = OK, 1 = erros
 - Warnings são aceitáveis (links para notas futuras, verified_by_reviewer: false)
 
@@ -81,6 +81,6 @@ Você pode rodar o setup automático para injetar estas regras de IA (como `.cur
 Isso configurará automaticamente Claude Desktop, Cursor, OpenCode/VSCode, Copilot/Codex e Antigravity.
 
 ## MCP Tools Disponíveis
-- `obsidian_mcp`: read, write, search notes
+- `obsidian_mcp`: read_note, write_note, query_knowledge_base, move_note, delete_note, validate_vault, reindex_vault, get_pending_reviews, get_mcp_metrics
 - `context7`: query official documentation
 - `skill`: load specialized skill instructions

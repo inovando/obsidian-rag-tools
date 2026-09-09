@@ -6,6 +6,7 @@ const { handleDeleteNote } = require('./lib/tools/delete');
 const { handleValidateVault } = require('./lib/tools/validate');
 const { handleReindexVault } = require('./lib/tools/reindex');
 const { handleGetPendingReviews } = require('./lib/tools/pending');
+const { handleListProjects } = require('./lib/tools/projects');
 const { handleListSkills, handleReadSkill } = require('./lib/tools/skills');
 const { handleManageAgentProfile } = require('./lib/tools/agents');
 const { handleManageGuidelines } = require('./lib/tools/guidelines');
@@ -94,6 +95,17 @@ function formatToolResult(name, result) {
           textContent += `\n\n💡 *Existem mais notas pendentes. Use limit=${result.limit} e offset=${result.offset + result.limit} para avançar.*`;
         }
       }
+    } else if (name === 'list_projects') {
+      if (!result.projects || result.projects.length === 0) {
+        textContent = `Nenhum projeto encontrado no diretório references/.`;
+      } else {
+        textContent = `📁 **Projetos Encontrados no Vault (${result.totalProjects}):**\n\n`;
+        textContent += result.projects.map(p => {
+          const anchorStr = p.anchorNote ? ` | Âncora: \`${p.anchorNote}\`` : '';
+          const tagsStr = (p.tags && p.tags.length > 0) ? ` | Tags: [${p.tags.join(', ')}]` : '';
+          return `### 📦 \`${p.slug}\` (${p.noteCount} notas)\n- **Título:** ${p.title}\n- **Caminho:** \`${p.relativePath}\`${anchorStr}${tagsStr}`;
+        }).join('\n\n');
+      }
     } else if (name === 'list_skills') {
       if (!result.skills || result.skills.length === 0) {
         textContent = `Nenhuma skill cadastrada em .agents/skills/`;
@@ -122,7 +134,11 @@ function formatToolResult(name, result) {
     } else if (name === 'delete_note') {
       textContent = `✅ Nota deletada com sucesso!\n- **Arquivo:** ${result.filePath}`;
     } else if (name === 'reindex_vault') {
-      textContent = `✅ Vault reindexado com sucesso!\n- **Arquivos processados:** ${result.totalFiles}\n- **Chunks vetoriais gerados:** ${result.totalChunks}`;
+      if (result.mode === 'incremental') {
+        textContent = `✅ Vault sincronizado incrementalmente com sucesso!\n- **Notas atualizadas:** ${result.updatedFilesCount}\n- **Chunks ativos no índice:** ${result.totalChunks}`;
+      } else {
+        textContent = `✅ Vault reindexado completamente com sucesso!\n- **Arquivos processados:** ${result.totalFiles}\n- **Chunks vetoriais gerados:** ${result.totalChunks}`;
+      }
     } else if (name === 'validate_vault') {
       isError = !result.success;
       const statusEmoji = result.success ? '✅ PASSED' : '❌ FAILED';
@@ -183,6 +199,8 @@ async function handleMessage(message) {
         result = handleManageGuidelines(args || {});
       } else if (name === 'get_pending_reviews') {
         result = handleGetPendingReviews(args || {});
+      } else if (name === 'list_projects') {
+        result = handleListProjects(args || {});
       } else if (name === 'list_skills') {
         result = handleListSkills(args || {});
       } else if (name === 'read_skill') {

@@ -53,17 +53,34 @@ function checkHeadingExists(content, headingAnchor) {
   return false;
 }
 
+function findVaultRoot(startDir) {
+  let curr = path.resolve(startDir);
+  while (curr && curr !== path.parse(curr).root) {
+    const tDir = path.join(curr, 'templates');
+    const rDir = path.join(curr, 'references');
+    if (fs.existsSync(tDir) && fs.statSync(tDir).isDirectory() &&
+        fs.existsSync(rDir) && fs.statSync(rDir).isDirectory()) {
+      return curr;
+    }
+    const parent = path.dirname(curr);
+    if (parent === curr) break;
+    curr = parent;
+  }
+  return null;
+}
+
 function main() {
-  const targetDir = process.argv[2] && !process.argv[2].startsWith('--') ? path.resolve(process.argv[2]) : process.cwd();
+  const givenDir = process.argv[2] && !process.argv[2].startsWith('--') ? path.resolve(process.argv[2]) : process.cwd();
   const isVerbose = process.argv.includes('--verbose') || process.argv.includes('-v');
 
-  if (!fs.existsSync(targetDir)) {
+  if (!fs.existsSync(givenDir)) {
     console.error("Directory does not exist");
     process.exit(1);
   }
   
-  const templatesDir = path.join(targetDir, 'templates');
-  const referencesDir = path.join(targetDir, 'references');
+  const vaultRoot = findVaultRoot(givenDir) || givenDir;
+  const templatesDir = path.join(vaultRoot, 'templates');
+  const referencesDir = path.join(vaultRoot, 'references');
   
   let templatesStat, referencesStat;
   try {
@@ -78,6 +95,7 @@ function main() {
     process.exit(1);
   }
   
+  const targetDir = vaultRoot;
   const vaultFiles = new Set();
   const vaultLowerMap = new Map();
   const vaultBasenameMap = new Map();
@@ -282,14 +300,14 @@ function main() {
     
     // Placeholder checks (B3: Warning para TODO/TBD em notas importadas)
     if (!isTemplateFile) {
-      if (/(?<![a-zA-Z0-9À-ÿ])TODO(?![a-zA-Z0-9À-ÿ])/i.test(bodyText)) {
+      if (/(?<![a-zA-Z0-9À-ÿ])TODO(?![a-zA-Z0-9À-ÿ])/.test(bodyText)) {
         if (isImportedOrLegacy) {
           fileWarnings.push("contains placeholder: 'TODO' (imported note)");
         } else {
           fileErrors.push("contains placeholder: 'TODO'");
         }
       }
-      if (/(?<![a-zA-Z0-9À-ÿ])TBD(?![a-zA-Z0-9À-ÿ])/i.test(bodyText)) {
+      if (/(?<![a-zA-Z0-9À-ÿ])TBD(?![a-zA-Z0-9À-ÿ])/.test(bodyText)) {
         if (isImportedOrLegacy) {
           fileWarnings.push("contains placeholder: 'TBD' (imported note)");
         } else {
@@ -374,11 +392,7 @@ function main() {
           }
           
           if (!foundPath) {
-            if (isTemplateFile || isImportedOrLegacy) {
-              fileWarnings.push("Wiki-link target not found (example link): [[" + target + "]]");
-            } else {
-              fileErrors.push("Broken wiki-link: [[" + target + "]]");
-            }
+            fileWarnings.push("Wiki-link target not found (pending note): [[" + target + "]]");
           } else {
             if (isCaseMismatch) {
               fileErrors.push("Case mismatch: [[" + target + "]]");

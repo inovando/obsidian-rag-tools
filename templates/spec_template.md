@@ -8,8 +8,8 @@ sources:
 verified_by_reviewer: false
 last_updated: "2026-09-02T19:00:00.000Z"
 token_density:
-  line_count: 50
-  character_count: 1500
+  line_count: 47
+  character_count: 1002
 ---
 
 # Especificação Técnica: [Nome da Feature]
