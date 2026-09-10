@@ -32,3 +32,6 @@ yarn-error.log*
 references/
 .agents/
 TagsRoutes/
+
+# cache do extrator de regras do Sonar
+tools/sonar-rules/out/

@@ -61,6 +61,9 @@ function formatToolResult(name, result) {
       textContent = `**Arquivo:** ${result.filePath}${filterMsg}\n**Linhas do Vault:** ${result.lineCount} | **Caracteres:** ${result.characterCount}\n\n${fmYaml}${result.content || ''}`;
     } else if (name === 'write_note') {
       textContent = `✅ Nota escrita com sucesso!\n- **Arquivo:** ${result.filePath}\n- **Total de Linhas:** ${result.lineCount}`;
+      if (result.warnings && result.warnings.length > 0) {
+        textContent += `\n\n⚠️ **Avisos (${result.warnings.length}):**\n${result.warnings.map(w => `- ${w}`).join('\n')}`;
+      }
     } else if (name === 'manage_guidelines') {
       if (result.guidelines) {
         textContent = `📐 **Diretrizes de Código e Projeto Registradas (${result.guidelines.length}):**\n\n`;
@@ -125,7 +128,9 @@ function formatToolResult(name, result) {
     } else if (name === 'manage_session_memory') {
       if (result.memory) {
         const mem = result.memory;
-        textContent = `🧠 **Memória de Sessão Ativa:**\n- **Atualizado em:** ${mem.updatedAt || 'Nunca'}\n- **Contexto:** ${mem.context || 'N/A'}\n- **Decisões (${(mem.decisions || []).length}):**\n${(mem.decisions || []).map(d => `  * ${d}`).join('\n')}\n- **Próximos Passos (${(mem.nextSteps || []).length}):**\n${(mem.nextSteps || []).map(n => `  * ${n}`).join('\n')}`;
+        const projStr = result.project ? ` (Projeto: \`${result.project}\`)` : '';
+        const warningBlock = result.warning ? `${result.warning}\n\n` : '';
+        textContent = `${warningBlock}🧠 **Memória de Sessão Ativa${projStr}:**\n- **Projeto:** ${result.project || 'global'}\n- **Atualizado em:** ${mem.updatedAt || 'Nunca'}\n- **Contexto:** ${mem.context || 'N/A'}\n- **Decisões (${(mem.decisions || []).length}):**\n${(mem.decisions || []).map(d => `  * ${d}`).join('\n')}\n- **Próximos Passos (${(mem.nextSteps || []).length}):**\n${(mem.nextSteps || []).map(n => `  * ${n}`).join('\n')}`;
       } else {
         textContent = result.message || JSON.stringify(result, null, 2);
       }
